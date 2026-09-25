@@ -1,0 +1,6 @@
+id: photo-copilot
+name: AI 摄影预约管家
+version: 1.0.0
+author: xfg-studio
+description: AI 摄影预约管家，支持套餐价目（证件照/写真/情侣/亲子/婚礼跟拍）、摄影师查询、预约拍摄（要素确认）、订单查询与运营统计。
+entrypoint: cn.xiaofuge.p.plugin.PhotoPlugin

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 摄影预约管家台 · Photography Studio</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:"PingFang SC","Microsoft YaHei",sans-serif; background:#f8f2f7; color:#14232b; }
+  header { background:linear-gradient(135deg,#7d5a7c,#b98bb6); color:#fff; padding:18px 28px; display:flex; justify-content:space-between; align-items:center; }
+  header h1 { font-size:20px; }
+  header .sub { font-size:12px; opacity:.85; margin-top:4px; }
+  header .badge { font-size:13px; background:rgba(255,255,255,.15); padding:6px 14px; border-radius:20px; }
+  main { display:grid; grid-template-columns:1fr 340px; gap:16px; padding:16px 20px; max-width:1240px; margin:0 auto; }
+  .col { display:flex; flex-direction:column; gap:16px; }
+  .card { background:#fff; border-radius:12px; padding:16px 18px; box-shadow:0 1px 4px rgba(125,90,124,.10); }
+  .card h2 { font-size:15px; margin-bottom:12px; color:#7d5a7c; }
+  .stat { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+  .stat div { background:#f0e3ee; border-radius:10px; padding:12px; }
+  .stat b { display:block; font-size:22px; color:#92608f; margin-top:4px; }
+  .stat span { font-size:12px; color:#a388a0; }
+  .tag { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; }
+  .tag.g { background:#e3f4e9; color:#218a58; }
+  .tag.y { background:#fdf3e0; color:#c07f16; }
+  .tag.r { background:#fdeaea; color:#c74a44; }
+  .tag.b { background:#e7f0fb; color:#2e5fa3; }
+  .it { border:1px solid #e8d2e6; border-radius:10px; padding:10px 14px; margin-bottom:10px; }
+  .it .top { display:flex; justify-content:space-between; margin-bottom:4px; }
+  .it b { color:#7d5a7c; font-size:13.5px; }
+  .it .meta { font-size:12.5px; color:#4d6673; line-height:1.7; }
+  .ai-panel { position:sticky; top:16px; display:flex; flex-direction:column; height:calc(100vh - 32px); background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 1px 4px rgba(125,90,124,.10); }
+  .ai-head { background:linear-gradient(135deg,#7d5a7c,#b98bb6); color:#fff; padding:14px 16px; }
+  .ai-head b { font-size:15px; }
+  .ai-head .sub { font-size:11px; opacity:.85; margin-top:3px; }
+  .ai-body { flex:1; overflow-y:auto; padding:14px; font-size:13.5px; line-height:1.75; }
+  .ai-body .msg { margin-bottom:12px; white-space:pre-wrap; word-break:break-word; }
+  .ai-body .msg.user { background:#f0e3ee; border-radius:10px 10px 2px 10px; padding:8px 12px; margin-left:24px; color:#14232b; }
+  .chips { padding:8px 14px; display:flex; flex-wrap:wrap; gap:6px; border-top:1px solid #ecdcea; }
+  .chip { font-size:12px; background:#f0e3ee; color:#7d5a7c; border:none; border-radius:14px; padding:5px 10px; cursor:pointer; }
+  .chip:hover { background:#d4b0d0; }
+  .ai-input { display:flex; gap:8px; padding:10px 14px; border-top:1px solid #ecdcea; }
+  .ai-input input { flex:1; border:1px solid #b5d0dc; border-radius:8px; padding:9px 12px; font-size:13px; outline:none; }
+  .ai-input input:focus { border-color:#b98bb6; }
+  .ai-input button { background:#b98bb6; color:#fff; border:none; border-radius:8px; padding:0 18px; font-size:13px; cursor:pointer; }
+  .ai-input button:disabled { background:#c0a3bd; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>📷 AI 摄影预约管家台</h1>
+    <div class="sub">套餐 · 摄影师 · 预约 · 统计 | 摄影工作室云平台</div>
+  </div>
+  <div class="badge" id="topBadge">加载中…</div>
+</header>
+<main>
+  <div class="col">
+    <div class="card">
+      <h2>运营看板</h2>
+      <div class="stat" id="stats"></div>
+    </div>
+    <div class="card">
+      <h2>拍摄套餐</h2>
+      <div id="services"></div>
+    </div>
+    <div class="card">
+      <h2>最新订单</h2>
+      <div id="recent"></div>
+    </div>
+  </div>
+  <div class="ai-panel">
+    <div class="ai-head">
+      <b>📷 AI 摄影预约管家</b>
+      <div class="sub">photo-copilot · 套餐 / 摄影师 / 预约 / 统计</div>
+    </div>
+    <div class="ai-body" id="aiBody"></div>
+    <div class="chips">
+      <button class="chip" onclick="ask('有哪些拍摄套餐和价格？')">拍摄套餐</button>
+      <button class="chip" onclick="ask('有哪些摄影师？擅长什么？')">摄影师查询</button>
+      <button class="chip" onclick="ask('帮我预约个人写真，周五 14:00，摄影师阿哲，穆先生 13800555555，确认无误直接办理')">预约拍摄</button>
+      <button class="chip" onclick="ask('查一下订单 F5001 的状态')">订单查询</button>
+      <button class="chip" onclick="ask('今天运营情况怎么样？')">运营看板</button>
+    </div>
+    <div class="ai-input">
+      <input id="q" placeholder="例如：证件照多少钱？；帮我预约个人写真，周五 14:00" onkeydown="if(event.key==='Enter')send()">
+      <button id="sendBtn" onclick="send()">发送</button>
+    </div>
+  </div>
+</main>
+<script>
+const j = r => Promise.resolve(r).then(resp => resp.json()).then(d => d.data ?? d);
+async function load() {
+  try {
+    const st = await j(fetch('/api/stats'));
+    document.getElementById('topBadge').textContent = `订单 ${st.totalOrders} · 营收 ¥${st.revenue}`;
+    document.getElementById('stats').innerHTML = `
+      <div><span>总单量</span><b>${st.totalOrders}</b></div>
+      <div><span>进行中</span><b>${st.ongoing}</b></div>
+      <div><span>已完成</span><b>${st.done}</b></div>
+      <div><span>营收</span><b>¥${st.revenue}</b></div>`;
+    const ps = await j(fetch('/api/services'));
+    document.getElementById('services').innerHTML = (ps.services || ps).map(p => `
+      <div class="it">
+        <div class="top"><b>${p.plan}</b><span class="tag g">¥${p.price}</span></div>
+        <div class="meta">约 ${p.hours} 小时 · ${p.desc}</div>
+      </div>`).join('');
+    document.getElementById('recent').innerHTML = `
+      <div class="it">
+        <div class="top"><b>F5001 · 滕先生</b><span class="tag y">已预订</span></div>
+        <div class="meta">个人写真 · 阿哲 · 周四 14:00 · ¥688</div>
+      </div>
+      <div class="it">
+        <div class="top"><b>F5002 · 岑女士</b><span class="tag b">拍摄中</span></div>
+        <div class="meta">亲子全家福 · 莉娜 · 周四 10:00 · ¥988</div>
+      </div>
+      <div class="it">
+        <div class="top"><b>F5003 · 殷先生</b><span class="tag g">已出片</span></div>
+        <div class="meta">证件照快拍 · 大鹏 · 周三 11:00 · ¥129</div>
+      </div>`;
+  } catch(e) { console.error(e); }
+}
+function ask(t) { const q=document.getElementById('q'); q.value=t; send(); }
+async function send() {
+  const inp = document.getElementById('q'), btn = document.getElementById('sendBtn');
+  const text = inp.value.trim(); if (!text || btn.disabled) return;
+  inp.value = ''; btn.disabled = true;
+  const body = document.getElementById('aiBody');
+  const u = document.createElement('div'); u.className = 'msg user'; u.textContent = text; body.appendChild(u);
+  const a = document.createElement('div'); a.className = 'msg'; a.textContent = '…'; body.appendChild(a);
+  try {
+    const resp = await fetch('/api/assistant/stream', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({message:text}) });
+    const reader = resp.body.getReader(), dec = new TextDecoder(); let buf = '', out = '';
+    for (;;) {
+      const {done, value} = await reader.read(); if (done) break;
+      buf += dec.decode(value, {stream:true});
+      const parts = buf.split('\n\n'); buf = parts.pop();
+      for (const p of parts) {
+        for (const line of p.split('\n')) {
+          if (!line.startsWith('data:')) continue;
+          const dstr = line.slice(5).trim(); if (!dstr || dstr === '[DONE]') continue;
+          try {
+            const d = JSON.parse(dstr);
+            const piece = d.content ?? d.delta ?? '';
+            if (typeof piece === 'string' && piece) { out += piece; a.textContent = out; body.scrollTop = body.scrollHeight; }
+          } catch(e) {}
+        }
+      }
+    }
+    if (!out) a.textContent = '（无返回内容）';
+  } catch(e) { a.textContent = 'AI 服务暂时不可用：' + e.message; }
+  btn.disabled = false; body.scrollTop = body.scrollHeight;
+}
+load();
+</script>
+</body>
+</html>
